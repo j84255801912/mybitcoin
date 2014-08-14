@@ -1094,6 +1094,15 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
 
         if (fTxIndex) {
             CDiskTxPos postx;
+	    /* postx will be the Block file location?
+                FILE* OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly) {
+                    return OpenDiskFile(pos, "blk", fReadOnly);
+                }
+                        
+               FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
+               
+             */
+
             if (pblocktree->ReadTxIndex(hash, postx)) {
                 CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
                 CBlockHeader header;
