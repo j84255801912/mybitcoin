@@ -15,7 +15,7 @@
 #ifdef ENABLE_WALLET
 #include "wallet.h"
 #endif
-
+#include <inttypes.h>
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
@@ -178,6 +178,22 @@ Value getrawtransaction(const Array& params, bool fHelp)
 
     string strHex = EncodeHexTx(tx);
 
+/*practice to print all txs in the latest block */
+    int cur = chainActive.Height();
+    LogPrintf("chainActive height = %d\n", cur);
+    CBlock block;
+    if (ReadBlockFromDisk(block, chainActive[cur])) {
+	LogPrintf("Successfully Read the latest BLOCK!\n");
+	int i = 0;
+	BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+		//GetHex will return string
+		LogPrintf("%d : %s\n", i, tx.GetHash().GetHex());
+		i++;
+	}
+    }
+	
+
+
     if (!fVerbose)
         return strHex;
 
@@ -186,6 +202,14 @@ Value getrawtransaction(const Array& params, bool fHelp)
     TxToJSON(tx, hashBlock, result);
     return result;
 }
+
+/*
+Value listrawtransaction(const Array& params, bool fHelp) 
+{
+	if (fHelp || params.size() > 0)
+		throw runtime_error("Haha Yoo\n");
+}
+*/
 
 #ifdef ENABLE_WALLET
 Value listunspent(const Array& params, bool fHelp)
