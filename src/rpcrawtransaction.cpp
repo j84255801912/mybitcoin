@@ -17,7 +17,7 @@
 #endif
 #include <inttypes.h>
 #include <stdint.h>
-
+#include <string.h>
 #include <boost/assign/list_of.hpp>
 #include "json/json_spirit_utils.h"
 #include "json/json_spirit_value.h"
@@ -80,6 +80,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 		out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
 		out.push_back(Pair("n", (int64_t)i));
 		Object o;
+		//!@# wtf , only cares about the ScriptPubKey type?
 		ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
 		out.push_back(Pair("scriptPubKey", o));
 		vout.push_back(out);
@@ -178,22 +179,6 @@ Value getrawtransaction(const Array& params, bool fHelp)
 
 	string strHex = EncodeHexTx(tx);
 
-	/*practice to print all txs in the latest block */
-	int cur = chainActive.Height();
-	int i, k;
-	CBlock block;
-	for (k = cur; k >= 0; k--) {
-		if (ReadBlockFromDisk(block, chainActive[k])) {
-			i = 0;
-			LogPrintf("- BLOCK %d -\n", k);
-			BOOST_FOREACH(const CTransaction &tx, block.vtx) {
-				//GetHex will return string
-				LogPrintf("%d : %s\n", i, tx.GetHash().GetHex());
-				i++;
-			}
-		}
-
-	}
 
 	if (!fVerbose)
 		return strHex;
@@ -203,9 +188,49 @@ Value getrawtransaction(const Array& params, bool fHelp)
 	TxToJSON(tx, hashBlock, result);
 	return result;
 }
+
 Value rpctestyo(const Array& params, bool fHelp) {
+	/*practice to print all txs in the latest block */
+	if (params.size() != 1)
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Parameter should be only 1 address.");
+	int cur = chainActive.Height();
+	int i, k;
+	Array a;
+	CBlock block;
+	for (k = cur; k >= 0; k--) {
+		if (ReadBlockFromDisk(block, chainActive[k])) {
+			i = 0;
+			BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+				//GetHex will return string
+				//LogPrintf("%d : %s\n", i, tx.GetHash().GetHex());
+				Array vout;
+				for (unsigned int j = 0; j < tx.vout.size(); j++) {
+					const CTxOut& txout = tx.vout[j];
+					txnouttype type;
+				    vector<CTxDestination> addresses;
+    				int nRequired;
+					//extract address from scriptPubKey
+					if (!ExtractDestinations(txout.scriptPubKey, type, addresses, nRequired)) {
+				    }
+					BOOST_FOREACH(const CTxDestination& addr, addresses) {
+						string addr_str = CBitcoinAddress(addr).ToString();
+						if (addr_str.compare(params[0].get_str())  == 0) {
+						//	LogPrintf("%s\n", tx.GetHash().GetHex());
+							a.push_back(tx.GetHash().GetHex());
+						}
+					}		
+				}
+				i++;
+			}
+		}
+
+	}
+/*
+	if (param.size() > 0)
+		LogPrintf("para = %s\n", params[0].get_str());
+*/
 	Object result;
-	LogPrintf("rpctestyo success!\n");
+    result.push_back(Pair("tx", a));
 	return result;
 }
 
