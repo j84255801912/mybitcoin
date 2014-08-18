@@ -53,6 +53,9 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out, bool fIncludeH
 
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 {
+	/*test*/
+	entry.push_back(Pair("size",  (int64_t )::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION)));
+//	LogPrintf("size = %d\n", ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION));
 	entry.push_back(Pair("txid", tx.GetHash().GetHex()));
 	entry.push_back(Pair("version", tx.nVersion));
 	entry.push_back(Pair("locktime", (int64_t)tx.nLockTime));
@@ -86,7 +89,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 		vout.push_back(out);
 	}
 	entry.push_back(Pair("vout", vout));
-
+	
 	if (hashBlock != 0) {
 		entry.push_back(Pair("blockhash", hashBlock.GetHex()));
 		map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(hashBlock);
@@ -195,6 +198,8 @@ Value rpctestyo(const Array& params, bool fHelp) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Parameter should be only 1 address.");
 	int cur = chainActive.Height();
 	int i, k;
+	int64_t total_received = 0;
+	
 	Array a;
 	CBlock block;
 	for (k = cur; k >= 0; k--) {
@@ -217,8 +222,10 @@ Value rpctestyo(const Array& params, bool fHelp) {
 						if (addr_str.compare(params[0].get_str())  == 0) {
 						//	LogPrintf("%s\n", tx.GetHash().GetHex());
 							a.push_back(tx.GetHash().GetHex());
+							total_received += txout.nValue;
 						}
-					}		
+					}
+			//		received += ValueFromAmount(txout.nValue);		
 				}
 				i++;
 			}
@@ -231,16 +238,9 @@ Value rpctestyo(const Array& params, bool fHelp) {
 */
 	Object result;
     result.push_back(Pair("tx", a));
+	result.push_back(Pair("total_received", ValueFromAmount(total_received)));
 	return result;
 }
-
-/*
-   Value listrawtransaction(const Array& params, bool fHelp) 
-   {
-   if (fHelp || params.size() > 0)
-   throw runtime_error("Haha Yoo\n");
-   }
- */
 
 #ifdef ENABLE_WALLET
 Value listunspent(const Array& params, bool fHelp)
